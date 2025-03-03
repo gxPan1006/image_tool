@@ -12,6 +12,7 @@ const SelectionEditor = (function() {
     let scale = 1;
     let zoomLevel = 1; // 用户缩放级别
     let mousePosition = { x: 0, y: 0 }; // 鼠标位置
+    let isInitialized = false;
     
     // 私有方法
     function drawSelections() {
@@ -336,8 +337,15 @@ const SelectionEditor = (function() {
     // 公共接口
     return {
         init: function() {
+            console.log("初始化选区编辑器");
+            
             // 初始化画布
             canvas = document.getElementById('selectionCanvas');
+            if (!canvas) {
+                console.error("找不到选区画布元素");
+                return;
+            }
+            
             ctx = canvas.getContext('2d');
             
             // 添加事件监听器
@@ -353,34 +361,70 @@ const SelectionEditor = (function() {
             
             // 添加缩放控制
             const zoomSlider = document.getElementById('editorZoomSlider');
-            zoomSlider.addEventListener('input', function() {
-                updateZoom(parseInt(this.value));
-            });
+            if (zoomSlider) {
+                zoomSlider.addEventListener('input', function() {
+                    updateZoom(parseInt(this.value));
+                });
+            }
             
-            document.getElementById('resetZoomBtn').addEventListener('click', function() {
-                updateZoom(100);
-            });
+            const resetZoomBtn = document.getElementById('resetZoomBtn');
+            if (resetZoomBtn) {
+                resetZoomBtn.addEventListener('click', function() {
+                    updateZoom(100);
+                });
+            }
             
             // 添加按钮事件
-            document.getElementById('addSelectionBtn').addEventListener('click', addSelection);
-            document.getElementById('clearSelectionsBtn').addEventListener('click', () => {
-                selections = [];
-                activeSelectionIndex = -1;
-                updateSelectionList();
-                drawSelections();
-            });
-            document.getElementById('updateSelectionBtn').addEventListener('click', updateSelection);
+            const addSelectionBtn = document.getElementById('addSelectionBtn');
+            if (addSelectionBtn) {
+                addSelectionBtn.addEventListener('click', addSelection);
+            }
+            
+            const clearSelectionsBtn = document.getElementById('clearSelectionsBtn');
+            if (clearSelectionsBtn) {
+                clearSelectionsBtn.addEventListener('click', () => {
+                    selections = [];
+                    activeSelectionIndex = -1;
+                    updateSelectionList();
+                    drawSelections();
+                });
+            }
+            
+            const updateSelectionBtn = document.getElementById('updateSelectionBtn');
+            if (updateSelectionBtn) {
+                updateSelectionBtn.addEventListener('click', updateSelection);
+            }
             
             // 弹窗控制
-            document.getElementById('closeSelectionModal').addEventListener('click', this.hideModal);
-            document.getElementById('cancelSelectionBtn').addEventListener('click', this.hideModal);
-            document.getElementById('applySelectionsBtn').addEventListener('click', () => {
-                this.applySelections();
-                this.hideModal();
-            });
+            const closeSelectionModal = document.getElementById('closeSelectionModal');
+            if (closeSelectionModal) {
+                closeSelectionModal.addEventListener('click', this.hideModal);
+            }
+            
+            const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
+            if (cancelSelectionBtn) {
+                cancelSelectionBtn.addEventListener('click', this.hideModal);
+            }
+            
+            const applySelectionsBtn = document.getElementById('applySelectionsBtn');
+            if (applySelectionsBtn) {
+                applySelectionsBtn.addEventListener('click', () => {
+                    this.applySelections();
+                });
+            }
+            
+            isInitialized = true;
+            console.log("选区编辑器初始化完成");
         },
         
         showModal: function(image) {
+            console.log("显示选区编辑器弹窗", image);
+            
+            if (!isInitialized) {
+                console.error("选区编辑器未初始化");
+                this.init();
+            }
+            
             originalImage = image;
             
             // 设置画布大小
@@ -391,7 +435,20 @@ const SelectionEditor = (function() {
             updateZoom(100);
             
             // 显示弹窗
-            document.getElementById('selectionModal').style.display = 'flex';
+            const modal = document.getElementById('selectionModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                
+                // 确保弹窗在视口中可见
+                setTimeout(() => {
+                    const modalContainer = modal.querySelector('.modal-container');
+                    if (modalContainer) {
+                        modalContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
+            } else {
+                console.error("找不到选区弹窗元素");
+            }
             
             // 绘制图像和选区
             drawSelections();
@@ -399,14 +456,20 @@ const SelectionEditor = (function() {
         },
         
         hideModal: function() {
-            document.getElementById('selectionModal').style.display = 'none';
+            const modal = document.getElementById('selectionModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         },
         
         setSelections: function(newSelections) {
-            selections = JSON.parse(JSON.stringify(newSelections)); // 深拷贝
+            selections = Array.isArray(newSelections) ? JSON.parse(JSON.stringify(newSelections)) : []; // 深拷贝
             activeSelectionIndex = selections.length > 0 ? 0 : -1;
-            drawSelections();
-            updateSelectionList();
+            
+            if (ctx && originalImage) {
+                drawSelections();
+                updateSelectionList();
+            }
         },
         
         getSelections: function() {
@@ -417,12 +480,12 @@ const SelectionEditor = (function() {
             // 将选区应用到主应用程序
             const newSelections = this.getSelections();
             console.log("应用选区:", newSelections);
-            SelectionHandler.setSelections(newSelections);
             
             // 隐藏弹窗
             this.hideModal();
             
-            // 自动应用设置，更新切分结果
+            // 设置选区并应用设置
+            SelectionHandler.setSelections(newSelections);
             FrameProcessor.applySettings();
         }
     };

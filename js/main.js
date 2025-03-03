@@ -25,13 +25,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     document.getElementById('confirmZipDownload').addEventListener('click', function() {
-        ExportManager.confirmZipDownload();
+        const defaultName = document.getElementById('zipFilename').value || 'frames';
+        ExportManager.confirmZipDownload(defaultName);
     });
     
     // 允许在输入框中按Enter确认
     document.getElementById('zipFilename').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            ExportManager.confirmZipDownload();
+            const defaultName = this.value || 'frames';
+            ExportManager.confirmZipDownload(defaultName);
         }
     });
     
@@ -52,5 +54,35 @@ document.addEventListener('DOMContentLoaded', function() {
         if (SelectionHandler.getSelectionMode() === 'auto') {
             SelectionHandler.detectRegions();
         }
+    });
+    
+    // 添加调试按钮事件
+    const debugOpenEditorBtn = document.getElementById('debugOpenEditor');
+    if (debugOpenEditorBtn) {
+        debugOpenEditorBtn.addEventListener('click', function() {
+            console.log("点击调试按钮");
+            SelectionHandler.openManualEditor();
+        });
+    }
+    
+    // 添加导出按钮事件
+    document.getElementById('exportFrames').addEventListener('click', function() {
+        console.log("点击导出所有帧按钮");
+        ExportManager.generatePythonCode();
+    });
+    
+    document.getElementById('downloadAllFrames').addEventListener('click', function() {
+        console.log("点击下载所有帧按钮");
+        ExportManager.downloadAllFrames();
+    });
+    
+    document.getElementById('downloadZip').addEventListener('click', function() {
+        console.log("点击打包下载按钮");
+        ExportManager.downloadAsZip();
+    });
+    
+    document.getElementById('generateCode').addEventListener('click', function() {
+        console.log("点击生成Python代码按钮");
+        ExportManager.generatePythonCode();
     });
 }); 

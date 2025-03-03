@@ -27,7 +27,7 @@
             <div class="selection-mode-container">
                 <div class="selection-mode-options">
                     <div class="selection-mode-option">
-                        <input type="radio" id="autoMode" name="selectionMode" value="auto" checked>
+                        <input type="radio" id="autoMode" name="selectionMode" value="auto">
                         <label for="autoMode" class="selection-mode-label">
                             <div class="mode-icon auto-mode-icon">
                                 <svg viewBox="0 0 24 24" width="24" height="24">
@@ -58,6 +58,12 @@
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <div class="debug-buttons" style="margin-top: 10px; text-align: center;">
+            <button id="debugOpenEditor" style="padding: 5px 10px; background-color: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                直接打开选区编辑器
+            </button>
         </div>
         
         <div class="tool-section">
@@ -142,6 +148,26 @@
                     <div class="form-group">
                         <label for="chineseName">中文名称</label>
                         <input type="text" id="chineseName" value="作物">
+                    </div>
+                </div>
+                
+                <div class="control-group" id="gridSettings" style="display: none;">
+                    <div class="control-title">网格设置</div>
+                    <div class="form-group">
+                        <label for="offsetX">X 偏移 (像素)</label>
+                        <input type="number" id="offsetX" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="offsetY">Y 偏移 (像素)</label>
+                        <input type="number" id="offsetY" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="spacingX">X 间距 (像素)</label>
+                        <input type="number" id="spacingX" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="spacingY">Y 间距 (像素)</label>
+                        <input type="number" id="spacingY" min="0" value="0">
                     </div>
                 </div>
             </div>
@@ -288,19 +314,55 @@
     <script src="js/auto-detector.js"></script>
     
     <!-- 在文件底部添加调试代码 -->
+    <div id="debugInfo" style="margin-top: 20px; padding: 10px; background-color: #f5f5f5; border-radius: 4px; display: none;">
+        <h3>调试信息</h3>
+        <pre id="debugOutput" style="max-height: 200px; overflow: auto; background-color: #fff; padding: 10px; border-radius: 4px;"></pre>
+        <button id="toggleDebug" style="margin-top: 10px;">显示/隐藏调试信息</button>
+    </div>
+
     <script>
-    // 添加调试代码
+    // 添加调试功能
     document.addEventListener('DOMContentLoaded', function() {
-        console.log("页面加载完成");
+        // 创建调试日志函数
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
         
-        // 监听手动模式选择
-        document.getElementById('manualMode').addEventListener('click', function() {
-            console.log("点击手动模式");
-        });
+        function addDebugMessage(type, ...args) {
+            const debugOutput = document.getElementById('debugOutput');
+            if (debugOutput) {
+                const message = args.map(arg => {
+                    if (typeof arg === 'object') {
+                        return JSON.stringify(arg, null, 2);
+                    }
+                    return String(arg);
+                }).join(' ');
+                
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-${type}`;
+                logEntry.innerHTML = `<span class="log-time">[${timestamp}]</span> <span class="log-type">[${type}]</span> ${message}`;
+                
+                debugOutput.appendChild(logEntry);
+                debugOutput.scrollTop = debugOutput.scrollHeight;
+            }
+        }
         
-        // 监听自动模式选择
-        document.getElementById('autoMode').addEventListener('click', function() {
-            console.log("点击自动模式");
+        // 重写console.log
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            addDebugMessage('info', ...args);
+        };
+        
+        // 重写console.error
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addDebugMessage('error', ...args);
+        };
+        
+        // 添加显示/隐藏调试信息按钮事件
+        document.getElementById('toggleDebug').addEventListener('click', function() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
         });
     });
     </script>

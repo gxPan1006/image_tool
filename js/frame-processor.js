@@ -145,15 +145,17 @@ const FrameProcessor = (function() {
             
             const selectionMode = SelectionHandler.getSelectionMode();
             
+            if (!selectionMode) {
+                alert('请先选择处理模式: 自动识别或手动框选');
+                return;
+            }
+            
             if (selectionMode === 'auto') {
                 // 自动识别模式
                 this.processAutoDetection();
             } else if (selectionMode === 'manual') {
                 // 手动框选模式
                 this.processManualSelection();
-            } else {
-                // 自动网格模式（已废弃）
-                this.processGridSelection();
             }
             
             // 显示切分结果
@@ -336,14 +338,23 @@ const FrameProcessor = (function() {
                 const frameName = document.createElement('input');
                 frameName.type = 'text';
                 frameName.className = 'frame-name';
-                frameName.value = frame.name;
+                frameName.value = frame.name || `frame_${index + 1}`;
                 frameName.addEventListener('change', function() {
                     frame.name = this.value;
+                });
+                
+                // 添加下载按钮
+                const downloadButton = document.createElement('button');
+                downloadButton.className = 'download-button';
+                downloadButton.textContent = '下载';
+                downloadButton.addEventListener('click', function() {
+                    ExportManager.downloadSingleFrame(frame.image.src, frameName.value);
                 });
                 
                 frameElement.appendChild(frameImage);
                 frameElement.appendChild(frameInfo);
                 frameElement.appendChild(frameName);
+                frameElement.appendChild(downloadButton);
                 framesContainer.appendChild(frameElement);
             });
         },

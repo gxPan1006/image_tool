@@ -55,6 +55,14 @@ const FileHandler = (function() {
                 return;
             }
             
+            // 提取文件名（不含扩展名）
+            const fileName = file.name.split('.')[0];
+            
+            // 设置作物名称为文件名
+            if (fileName) {
+                document.getElementById('cropName').value = fileName;
+            }
+            
             fileInfo.textContent = `已选择: ${file.name} (${formatFileSize(file.size)})`;
             
             const reader = new FileReader();
@@ -63,6 +71,9 @@ const FileHandler = (function() {
                 img.onload = () => {
                     // 保存原始图像
                     originalImage = img;
+                    
+                    // 保存原始文件名
+                    originalImage.fileName = fileName;
                     
                     // 显示图像
                     const imgElement = document.getElementById('originalImage');
@@ -77,9 +88,31 @@ const FileHandler = (function() {
                     // 设置帧处理器的图像
                     FrameProcessor.setOriginalImage(img);
                     
-                    // 如果是自动模式，自动应用设置
-                    if (SelectionHandler.getSelectionMode() === 'auto') {
-                        FrameProcessor.applySettings();
+                    // 提示用户选择模式
+                    if (!SelectionHandler.getSelectionMode()) {
+                        const message = document.createElement('div');
+                        message.className = 'mode-prompt';
+                        message.textContent = '请选择处理模式: 自动识别或手动框选';
+                        message.style.color = '#4caf50';
+                        message.style.fontWeight = 'bold';
+                        message.style.marginTop = '10px';
+                        message.style.textAlign = 'center';
+                        
+                        const container = document.querySelector('.selection-mode-container');
+                        
+                        // 移除已有提示
+                        const existingPrompt = container.querySelector('.mode-prompt');
+                        if (existingPrompt) {
+                            existingPrompt.remove();
+                        }
+                        
+                        container.appendChild(message);
+                        
+                        // 5秒后自动隐藏提示
+                        setTimeout(() => {
+                            message.style.opacity = '0';
+                            setTimeout(() => message.remove(), 1000);
+                        }, 5000);
                     }
                 };
                 img.src = e.target.result;

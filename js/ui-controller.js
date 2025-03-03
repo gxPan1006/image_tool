@@ -77,11 +77,43 @@ const UIController = (function() {
         },
         
         setupButtonEvents: function() {
-            document.getElementById('applySettings').addEventListener('click', FrameProcessor.applySettings.bind(FrameProcessor));
-            document.getElementById('exportFrames').addEventListener('click', ExportManager.exportFrames);
-            document.getElementById('downloadAllFrames').addEventListener('click', ExportManager.downloadAllFrames);
-            document.getElementById('downloadZip').addEventListener('click', ExportManager.downloadAsZip);
-            document.getElementById('generateCode').addEventListener('click', ExportManager.generateCode);
+            // 应用设置按钮
+            document.getElementById('applySettings').addEventListener('click', function() {
+                FrameProcessor.applySettings();
+            });
+            
+            // 导出按钮
+            const exportFramesBtn = document.getElementById('exportFrames');
+            if (exportFramesBtn) {
+                exportFramesBtn.addEventListener('click', function() {
+                    console.log("点击导出所有帧按钮");
+                    ExportManager.generatePythonCode();
+                });
+            }
+            
+            const downloadAllFramesBtn = document.getElementById('downloadAllFrames');
+            if (downloadAllFramesBtn) {
+                downloadAllFramesBtn.addEventListener('click', function() {
+                    console.log("点击下载所有帧按钮");
+                    ExportManager.downloadAllFrames();
+                });
+            }
+            
+            const downloadZipBtn = document.getElementById('downloadZip');
+            if (downloadZipBtn) {
+                downloadZipBtn.addEventListener('click', function() {
+                    console.log("点击打包下载按钮");
+                    ExportManager.downloadAsZip();
+                });
+            }
+            
+            const generateCodeBtn = document.getElementById('generateCode');
+            if (generateCodeBtn) {
+                generateCodeBtn.addEventListener('click', function() {
+                    console.log("点击生成Python代码按钮");
+                    ExportManager.generatePythonCode();
+                });
+            }
         },
         
         setupSectionCollapse: function() {
