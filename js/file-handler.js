@@ -83,6 +83,29 @@ const FileHandler = (function() {
         
         getOriginalImage: function() {
             return originalImage;
+        },
+        
+        handleImageLoad: function(image) {
+            // 设置原始图像
+            originalImage = image;
+            
+            // 显示图像
+            const imgElement = document.getElementById('originalImage');
+            imgElement.src = image.src;
+            
+            // 更新文件信息
+            document.getElementById('fileInfo').textContent = `图像尺寸: ${image.width} × ${image.height} 像素`;
+            
+            // 设置选择处理器的图像
+            SelectionHandler.setOriginalImage(image);
+            
+            // 设置帧处理器的图像
+            FrameProcessor.setOriginalImage(image);
+            
+            // 如果是自动模式，自动应用设置
+            if (SelectionHandler.getSelectionMode() === 'auto') {
+                FrameProcessor.applySettings();
+            }
         }
     };
 })(); 

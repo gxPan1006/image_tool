@@ -1,6 +1,7 @@
 // 帧处理模块
 const FrameProcessor = (function() {
     // 私有变量
+    let originalImage = null;
     let frames = [];
     
     // 私有方法
@@ -44,37 +45,31 @@ const FrameProcessor = (function() {
     
     // 公共接口
     return {
+        setOriginalImage: function(image) {
+            originalImage = image;
+        },
+        
         updateFrameCount: function() {
-            const originalImage = FileHandler.getOriginalImage();
-            if (!originalImage) return;
+            // 根据选择模式更新帧数量
+            const selectionMode = SelectionHandler.getSelectionMode();
             
-            // 如果是手动选区模式，不自动计算帧数
-            if (SelectionHandler.getSelectionMode() === 'manual') {
-                const selections = SelectionHandler.getManualSelections();
+            if (selectionMode === 'auto') {
+                // 自动识别模式，使用检测到的区域数量
+                const regions = SelectionHandler.getSelections();
+                document.getElementById('totalFrames').value = regions.length;
+            } else if (selectionMode === 'manual') {
+                // 手动框选模式，使用选区数量
+                const selections = SelectionHandler.getSelections();
                 document.getElementById('totalFrames').value = selections.length;
-                return;
+            } else {
+                // 自动网格模式（已废弃）
+                const frameWidth = parseInt(document.getElementById('frameWidth').value);
+                const frameHeight = parseInt(document.getElementById('frameHeight').value);
+                const frameColumns = parseInt(document.getElementById('frameColumns').value);
+                const frameRows = parseInt(document.getElementById('frameRows').value);
+                
+                document.getElementById('totalFrames').value = frameColumns * frameRows;
             }
-            
-            const frameWidth = parseInt(document.getElementById('frameWidth').value) || 16;
-            const frameHeight = parseInt(document.getElementById('frameHeight').value) || 16;
-            const offsetX = parseInt(document.getElementById('offsetX').value) || 0;
-            const offsetY = parseInt(document.getElementById('offsetY').value) || 0;
-            const spacingX = parseInt(document.getElementById('spacingX').value) || 0;
-            const spacingY = parseInt(document.getElementById('spacingY').value) || 0;
-            
-            // 计算横向和纵向的帧数
-            const availableWidth = originalImage.width - offsetX;
-            const availableHeight = originalImage.height - offsetY;
-            
-            const columns = Math.floor(availableWidth / (frameWidth + spacingX));
-            const rows = Math.floor(availableHeight / (frameHeight + spacingY));
-            
-            document.getElementById('frameColumns').value = columns;
-            document.getElementById('frameRows').value = rows;
-            document.getElementById('totalFrames').value = columns * rows;
-            
-            // 更新网格覆盖
-            this.updateGridOverlay();
         },
         
         updateManualFrameCount: function() {
@@ -143,100 +138,208 @@ const FrameProcessor = (function() {
         },
         
         applySettings: function() {
-            const originalImage = FileHandler.getOriginalImage();
             if (!originalImage) {
                 alert('请先上传图像！');
                 return;
             }
             
-            // 更新网格覆盖
-            this.updateGridOverlay();
+            const selectionMode = SelectionHandler.getSelectionMode();
             
-            // 清空帧容器
-            const framesContainer = document.getElementById('framesContainer');
-            framesContainer.innerHTML = '';
+            if (selectionMode === 'auto') {
+                // 自动识别模式
+                this.processAutoDetection();
+            } else if (selectionMode === 'manual') {
+                // 手动框选模式
+                this.processManualSelection();
+            } else {
+                // 自动网格模式（已废弃）
+                this.processGridSelection();
+            }
+            
+            // 显示切分结果
+            this.displayFrames();
+        },
+        
+        processAutoDetection: function() {
+            // 获取自动检测的区域
+            const regions = SelectionHandler.getSelections();
+            
+            // 获取边距设置
+            const padding = parseInt(document.getElementById('paddingSize').value) || 0;
+            
+            // 创建临时画布
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // 清空现有帧
             frames = [];
             
-            // 创建离屏画布
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+            // 处理每个检测到的区域
+            regions.forEach((region, index) => {
+                // 应用边距
+                const paddedRegion = {
+                    x: Math.max(0, region.x - padding),
+                    y: Math.max(0, region.y - padding),
+                    width: region.width + padding * 2,
+                    height: region.height + padding * 2
+                };
+                
+                // 设置画布大小
+                tempCanvas.width = paddedRegion.width;
+                tempCanvas.height = paddedRegion.height;
+                
+                // 清除画布
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // 绘制区域
+                tempCtx.drawImage(
+                    originalImage,
+                    paddedRegion.x, paddedRegion.y, paddedRegion.width, paddedRegion.height,
+                    0, 0, paddedRegion.width, paddedRegion.height
+                );
+                
+                // 创建新图像
+                const frameImage = new Image();
+                frameImage.src = tempCanvas.toDataURL();
+                
+                // 添加到帧列表
+                frames.push({
+                    image: frameImage,
+                    x: paddedRegion.x,
+                    y: paddedRegion.y,
+                    width: paddedRegion.width,
+                    height: paddedRegion.height,
+                    name: `frame_${index + 1}`
+                });
+            });
+        },
+        
+        processManualSelection: function() {
+            // 获取手动选区
+            const selections = SelectionHandler.getSelections();
             
-            // 根据选择模式处理
-            if (SelectionHandler.getSelectionMode() === 'manual') {
-                // 手动选区模式
-                const selections = SelectionHandler.getManualSelections();
+            // 创建临时画布
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // 清空现有帧
+            frames = [];
+            
+            // 处理每个选区
+            selections.forEach((selection, index) => {
+                // 设置画布大小
+                tempCanvas.width = selection.width;
+                tempCanvas.height = selection.height;
                 
-                if (selections.length === 0) {
-                    alert('请先添加至少一个选区！');
-                    return;
-                }
+                // 清除画布
+                tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
                 
-                // 处理每个手动选区
-                selections.forEach((selection, index) => {
-                    canvas.width = selection.width;
-                    canvas.height = selection.height;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // 绘制选区
+                tempCtx.drawImage(
+                    originalImage,
+                    selection.x, selection.y, selection.width, selection.height,
+                    0, 0, selection.width, selection.height
+                );
+                
+                // 创建新图像
+                const frameImage = new Image();
+                frameImage.src = tempCanvas.toDataURL();
+                
+                // 添加到帧列表
+                frames.push({
+                    image: frameImage,
+                    x: selection.x,
+                    y: selection.y,
+                    width: selection.width,
+                    height: selection.height,
+                    name: `frame_${index + 1}`
+                });
+            });
+        },
+        
+        processGridSelection: function() {
+            // 获取设置
+            const frameWidth = parseInt(document.getElementById('frameWidth').value);
+            const frameHeight = parseInt(document.getElementById('frameHeight').value);
+            const frameColumns = parseInt(document.getElementById('frameColumns').value);
+            const frameRows = parseInt(document.getElementById('frameRows').value);
+            const offsetX = parseInt(document.getElementById('offsetX').value) || 0;
+            const offsetY = parseInt(document.getElementById('offsetY').value) || 0;
+            const spacingX = parseInt(document.getElementById('spacingX').value) || 0;
+            const spacingY = parseInt(document.getElementById('spacingY').value) || 0;
+            
+            // 创建临时画布
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = frameWidth;
+            tempCanvas.height = frameHeight;
+            
+            // 清空现有帧
+            frames = [];
+            
+            // 切分图像
+            for (let row = 0; row < frameRows; row++) {
+                for (let col = 0; col < frameColumns; col++) {
+                    // 计算位置
+                    const x = offsetX + col * (frameWidth + spacingX);
+                    const y = offsetY + row * (frameHeight + spacingY);
                     
-                    ctx.drawImage(
+                    // 清除画布
+                    tempCtx.clearRect(0, 0, frameWidth, frameHeight);
+                    
+                    // 绘制帧
+                    tempCtx.drawImage(
                         originalImage,
-                        selection.x, selection.y, selection.width, selection.height,
-                        0, 0, selection.width, selection.height
+                        x, y, frameWidth, frameHeight,
+                        0, 0, frameWidth, frameHeight
                     );
                     
-                    const frameDataURL = canvas.toDataURL();
-                    frames.push(frameDataURL);
+                    // 创建新图像
+                    const frameImage = new Image();
+                    frameImage.src = tempCanvas.toDataURL();
                     
-                    // 创建帧预览
-                    createFramePreview(frameDataURL, index, `选区 ${index + 1}`, selection);
-                });
-                
-                // 更新总帧数
-                document.getElementById('totalFrames').value = selections.length;
-                
-            } else {
-                // 自动网格模式
-                const frameWidth = parseInt(document.getElementById('frameWidth').value) || 16;
-                const frameHeight = parseInt(document.getElementById('frameHeight').value) || 16;
-                const offsetX = parseInt(document.getElementById('offsetX').value) || 0;
-                const offsetY = parseInt(document.getElementById('offsetY').value) || 0;
-                const spacingX = parseInt(document.getElementById('spacingX').value) || 0;
-                const spacingY = parseInt(document.getElementById('spacingY').value) || 0;
-                const columns = parseInt(document.getElementById('frameColumns').value) || 1;
-                const rows = parseInt(document.getElementById('frameRows').value) || 1;
-                
-                canvas.width = frameWidth;
-                canvas.height = frameHeight;
-                
-                // 切分帧
-                let frameIndex = 0;
-                for (let row = 0; row < rows; row++) {
-                    for (let col = 0; col < columns; col++) {
-                        ctx.clearRect(0, 0, frameWidth, frameHeight);
-                        
-                        const sx = offsetX + col * (frameWidth + spacingX);
-                        const sy = offsetY + row * (frameHeight + spacingY);
-                        
-                        ctx.drawImage(
-                            originalImage,
-                            sx, sy, frameWidth, frameHeight,
-                            0, 0, frameWidth, frameHeight
-                        );
-                        
-                        const frameDataURL = canvas.toDataURL();
-                        frames.push(frameDataURL);
-                        
-                        // 创建帧预览
-                        createFramePreview(
-                            frameDataURL, 
-                            frameIndex, 
-                            `帧 ${frameIndex + 1} (行${row + 1},列${col + 1})`, 
-                            { x: sx, y: sy, width: frameWidth, height: frameHeight }
-                        );
-                        
-                        frameIndex++;
-                    }
+                    // 添加到帧列表
+                    frames.push({
+                        image: frameImage,
+                        x: x,
+                        y: y,
+                        width: frameWidth,
+                        height: frameHeight,
+                        name: `frame_${row * frameColumns + col + 1}`
+                    });
                 }
             }
+        },
+        
+        displayFrames: function() {
+            const framesContainer = document.getElementById('framesContainer');
+            framesContainer.innerHTML = '';
+            
+            frames.forEach((frame, index) => {
+                const frameElement = document.createElement('div');
+                frameElement.className = 'frame';
+                
+                const frameImage = document.createElement('img');
+                frameImage.src = frame.image.src;
+                frameImage.alt = `Frame ${index + 1}`;
+                
+                const frameInfo = document.createElement('div');
+                frameInfo.className = 'frame-info';
+                frameInfo.textContent = `${frame.width}×${frame.height}`;
+                
+                const frameName = document.createElement('input');
+                frameName.type = 'text';
+                frameName.className = 'frame-name';
+                frameName.value = frame.name;
+                frameName.addEventListener('change', function() {
+                    frame.name = this.value;
+                });
+                
+                frameElement.appendChild(frameImage);
+                frameElement.appendChild(frameInfo);
+                frameElement.appendChild(frameName);
+                framesContainer.appendChild(frameElement);
+            });
         },
         
         getFrames: function() {

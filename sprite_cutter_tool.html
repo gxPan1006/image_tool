@@ -31,14 +31,15 @@
                         <label for="autoMode" class="selection-mode-label">
                             <div class="mode-icon auto-mode-icon">
                                 <svg viewBox="0 0 24 24" width="24" height="24">
-                                    <rect x="3" y="3" width="7" height="7" fill="currentColor" />
-                                    <rect x="14" y="3" width="7" height="7" fill="currentColor" />
-                                    <rect x="3" y="14" width="7" height="7" fill="currentColor" />
-                                    <rect x="14" y="14" width="7" height="7" fill="currentColor" />
+                                    <path d="M3,3 L21,3 L21,21 L3,21 L3,3 Z" fill="none" stroke="currentColor" stroke-width="1.5" />
+                                    <path d="M7,7 L12,7 L12,12 L7,12 L7,7 Z" fill="currentColor" />
+                                    <path d="M14,7 L17,7 L17,10 L14,10 L14,7 Z" fill="currentColor" />
+                                    <path d="M14,12 L17,12 L17,15 L14,15 L14,12 Z" fill="currentColor" />
+                                    <path d="M7,14 L12,14 L12,17 L7,17 L7,14 Z" fill="currentColor" />
                                 </svg>
                             </div>
-                            <div class="mode-title">自动网格</div>
-                            <div class="mode-description">根据设置的尺寸和间距自动切分图像</div>
+                            <div class="mode-title">自动识别</div>
+                            <div class="mode-description">自动检测图像中的独立图形区域</div>
                         </label>
                     </div>
                     
@@ -63,6 +64,22 @@
             <h2 class="section-header collapsible">切分设置 <span class="collapse-icon">▼</span></h2>
             <div class="section-content">
             <div class="control-panel">
+                <div class="control-group" id="autoDetectionSettings">
+                    <div class="control-title">自动识别设置</div>
+                    <div class="form-group">
+                        <label for="minRegionSize">最小区域大小 (像素)</label>
+                        <input type="number" id="minRegionSize" min="1" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="mergeThreshold">合并阈值 (像素)</label>
+                        <input type="number" id="mergeThreshold" min="0" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="paddingSize">边距大小 (像素)</label>
+                        <input type="number" id="paddingSize" min="0" value="1">
+                    </div>
+                </div>
+                
                 <div class="control-group">
                     <div class="control-title">基本设置</div>
                     <div class="form-group">
@@ -268,5 +285,6 @@
     
     <!-- 在文件底部添加新的脚本引用 -->
     <script src="js/selection-editor.js"></script>
+    <script src="js/auto-detector.js"></script>
 </body>
 </html>

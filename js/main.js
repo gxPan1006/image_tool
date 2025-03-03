@@ -34,4 +34,23 @@ document.addEventListener('DOMContentLoaded', function() {
             ExportManager.confirmZipDownload();
         }
     });
+    
+    // 添加自动检测设置事件
+    document.getElementById('minRegionSize').addEventListener('change', function() {
+        if (SelectionHandler.getSelectionMode() === 'auto') {
+            SelectionHandler.detectRegions();
+        }
+    });
+    
+    document.getElementById('mergeThreshold').addEventListener('change', function() {
+        if (SelectionHandler.getSelectionMode() === 'auto') {
+            SelectionHandler.detectRegions();
+        }
+    });
+    
+    document.getElementById('paddingSize').addEventListener('change', function() {
+        if (SelectionHandler.getSelectionMode() === 'auto') {
+            SelectionHandler.detectRegions();
+        }
+    });
 }); 
