@@ -1,4 +1,4 @@
-// 选择处理模块 - 修改为支持自动识别
+// 选择处理模块 - 修改为支持自动识别和手动框选
 const SelectionHandler = (function() {
     // 私有变量
     let originalImage = null;
@@ -11,8 +11,9 @@ const SelectionHandler = (function() {
             // 选择模式切换
             const modeRadios = document.querySelectorAll('input[name="selectionMode"]');
             modeRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    selectionMode = this.value;
+                radio.addEventListener('change', (function(event) {
+                    selectionMode = event.target.value;
+                    console.log("切换到模式:", selectionMode);
                     
                     if (selectionMode === 'manual') {
                         // 隐藏自动检测的区域显示
@@ -22,6 +23,7 @@ const SelectionHandler = (function() {
                         
                         // 如果已经上传了图像，直接打开选区编辑器
                         if (originalImage) {
+                            console.log("打开选区编辑器");
                             // 打开选区编辑器
                             SelectionEditor.setSelections(selections);
                             SelectionEditor.showModal(originalImage);
@@ -38,6 +40,11 @@ const SelectionHandler = (function() {
                         });
                         // 清除手动选区
                         selections = [];
+                        
+                        // 如果是自动模式且已有图像，立即执行检测
+                        if (originalImage) {
+                            this.detectRegions();
+                        }
                     }
                     
                     // 更新设置面板显示
@@ -45,7 +52,7 @@ const SelectionHandler = (function() {
                     
                     // 更新帧数量
                     FrameProcessor.updateFrameCount();
-                });
+                }).bind(this)); // 使用bind确保正确的this上下文
             });
             
             // 初始化设置面板显示

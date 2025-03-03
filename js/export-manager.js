@@ -57,14 +57,14 @@ const ExportManager = (function() {
                 return;
             }
             
-            const frameInputs = document.querySelectorAll('.frame-name-input');
+            // 获取作物名称
+            const cropName = document.getElementById('cropName').value || 'crop';
             
-            for (let i = 0; i < frames.length; i++) {
-                const frameName = frameInputs[i].value || `frame_${i + 1}`;
-                setTimeout(() => {
-                    ExportManager.downloadFrame(i, frameName);
-                }, i * 100); // 添加延迟，避免浏览器阻止多个下载
-            }
+            // 下载每一帧
+            frames.forEach((frame, index) => {
+                const frameName = frame.name || `${cropName}_${index + 1}`;
+                this.downloadSingleFrame(frame.image.src, frameName);
+            });
         },
         
         downloadAsZip: function() {

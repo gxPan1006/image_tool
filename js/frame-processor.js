@@ -217,6 +217,12 @@ const FrameProcessor = (function() {
         processManualSelection: function() {
             // 获取手动选区
             const selections = SelectionHandler.getSelections();
+            console.log("处理手动选区:", selections);
+            
+            if (!selections || selections.length === 0) {
+                alert('请先添加选区！');
+                return;
+            }
             
             // 创建临时画布
             const tempCanvas = document.createElement('canvas');

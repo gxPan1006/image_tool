@@ -286,5 +286,23 @@
     <!-- 在文件底部添加新的脚本引用 -->
     <script src="js/selection-editor.js"></script>
     <script src="js/auto-detector.js"></script>
+    
+    <!-- 在文件底部添加调试代码 -->
+    <script>
+    // 添加调试代码
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("页面加载完成");
+        
+        // 监听手动模式选择
+        document.getElementById('manualMode').addEventListener('click', function() {
+            console.log("点击手动模式");
+        });
+        
+        // 监听自动模式选择
+        document.getElementById('autoMode').addEventListener('click', function() {
+            console.log("点击自动模式");
+        });
+    });
+    </script>
 </body>
 </html>

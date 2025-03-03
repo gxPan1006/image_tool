@@ -49,8 +49,6 @@ const FileHandler = (function() {
         handleFiles: function(files) {
             const file = files[0];
             const fileInfo = document.getElementById('fileInfo');
-            const originalImageElem = document.getElementById('originalImage');
-            const frameHeightInput = document.getElementById('frameHeight');
             
             if (!file.type.match('image.*')) {
                 alert('请选择图像文件！');
@@ -61,22 +59,30 @@ const FileHandler = (function() {
             
             const reader = new FileReader();
             reader.onload = (e) => {
-                originalImageElem.src = e.target.result;
-                originalImageElem.onload = () => {
-                    originalImage = originalImageElem;
+                const img = new Image();
+                img.onload = () => {
+                    // 保存原始图像
+                    originalImage = img;
                     
-                    // 设置选择处理器的原始图像
-                    SelectionHandler.setOriginalImage(originalImage);
+                    // 显示图像
+                    const imgElement = document.getElementById('originalImage');
+                    imgElement.src = img.src;
                     
-                    // 自动设置帧高度为图像高度
-                    frameHeightInput.value = originalImageElem.height;
+                    // 更新文件信息
+                    fileInfo.textContent = `图像尺寸: ${img.width} × ${img.height} 像素`;
                     
-                    // 更新帧数量
-                    FrameProcessor.updateFrameCount();
+                    // 设置选择处理器的图像
+                    SelectionHandler.setOriginalImage(img);
                     
-                    // 应用设置
-                    FrameProcessor.applySettings();
+                    // 设置帧处理器的图像
+                    FrameProcessor.setOriginalImage(img);
+                    
+                    // 如果是自动模式，自动应用设置
+                    if (SelectionHandler.getSelectionMode() === 'auto') {
+                        FrameProcessor.applySettings();
+                    }
                 };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         },

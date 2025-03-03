@@ -415,7 +415,9 @@ const SelectionEditor = (function() {
         
         applySelections: function() {
             // 将选区应用到主应用程序
-            SelectionHandler.setSelections(this.getSelections());
+            const newSelections = this.getSelections();
+            console.log("应用选区:", newSelections);
+            SelectionHandler.setSelections(newSelections);
             
             // 隐藏弹窗
             this.hideModal();
