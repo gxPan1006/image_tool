@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精灵图切分工具</title>
+    <!-- 添加JSZip库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>精灵图切分工具</h1>
+        
+        <div class="tool-section">
+            <h2>上传图像</h2>
+            <div class="file-drop-area" id="dropArea">
+                <div class="drop-message">拖放图像文件到这里或点击上传</div>
+                <input type="file" id="fileInput" class="file-input" accept="image/*">
+                <div class="file-info" id="fileInfo">未选择文件</div>
+            </div>
+        </div>
+        
+        <div class="tool-section selection-mode-section">
+            <h2>选择模式</h2>
+            <div class="selection-mode-container">
+                <div class="selection-mode-options">
+                    <div class="selection-mode-option">
+                        <input type="radio" id="autoMode" name="selectionMode" value="auto" checked>
+                        <label for="autoMode" class="selection-mode-label">
+                            <div class="mode-icon auto-mode-icon">
+                                <svg viewBox="0 0 24 24" width="24" height="24">
+                                    <rect x="3" y="3" width="7" height="7" fill="currentColor" />
+                                    <rect x="14" y="3" width="7" height="7" fill="currentColor" />
+                                    <rect x="3" y="14" width="7" height="7" fill="currentColor" />
+                                    <rect x="14" y="14" width="7" height="7" fill="currentColor" />
+                                </svg>
+                            </div>
+                            <div class="mode-title">自动网格</div>
+                            <div class="mode-description">根据设置的尺寸和间距自动切分图像</div>
+                        </label>
+                    </div>
+                    
+                    <div class="selection-mode-option">
+                        <input type="radio" id="manualMode" name="selectionMode" value="manual">
+                        <label for="manualMode" class="selection-mode-label">
+                            <div class="mode-icon manual-mode-icon">
+                                <svg viewBox="0 0 24 24" width="24" height="24">
+                                    <path d="M3,3 L21,3 L21,21 L3,21 L3,3 Z M7,7 L17,7 L17,17 L7,17 L7,7 Z" fill="none" stroke="currentColor" stroke-width="2" />
+                                    <path d="M9,9 L15,9 L15,15 L9,15 L9,9 Z" fill="currentColor" />
+                                </svg>
+                            </div>
+                            <div class="mode-title">手动框选</div>
+                            <div class="mode-description">手动创建和编辑选区</div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tool-section">
+            <h2 class="section-header collapsible">切分设置 <span class="collapse-icon">▼</span></h2>
+            <div class="section-content">
+            <div class="control-panel">
+                <div class="control-group">
+                    <div class="control-title">基本设置</div>
+                    <div class="form-group">
+                        <label for="frameWidth">帧宽度 (像素)</label>
+                        <input type="number" id="frameWidth" min="1" value="16">
+                    </div>
+                    <div class="form-group">
+                        <label for="frameHeight">帧高度 (像素)</label>
+                        <input type="number" id="frameHeight" min="1" value="16">
+                    </div>
+                    <div class="form-group">
+                        <label for="frameColumns">横向帧数</label>
+                        <input type="number" id="frameColumns" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="frameRows">纵向帧数</label>
+                        <input type="number" id="frameRows" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="totalFrames">总帧数 (自动计算)</label>
+                        <input type="number" id="totalFrames" min="1" value="1" readonly>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-title">高级设置</div>
+                    <div class="form-group">
+                        <label for="offsetX">X轴偏移 (像素)</label>
+                        <input type="number" id="offsetX" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="offsetY">Y轴偏移 (像素)</label>
+                        <input type="number" id="offsetY" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="spacingX">横向帧间距 (像素)</label>
+                        <input type="number" id="spacingX" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="spacingY">纵向帧间距 (像素)</label>
+                        <input type="number" id="spacingY" min="0" value="0">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-title">元数据</div>
+                    <div class="form-group">
+                        <label for="cropName">作物名称</label>
+                        <input type="text" id="cropName" value="crop">
+                    </div>
+                    <div class="form-group">
+                        <label for="cropType">作物类型</label>
+                        <select id="cropType">
+                            <option value="crops">农作物</option>
+                            <option value="flowers">花卉</option>
+                            <option value="herb">草药</option>
+                            <option value="mushroom">蘑菇</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="chineseName">中文名称</label>
+                        <input type="text" id="chineseName" value="作物">
+                    </div>
+                </div>
+            </div>
+            
+            <button id="applySettings">应用设置</button>
+            </div>
+        </div>
+        
+        <div class="tool-section preview-section">
+            <h2>预览</h2>
+            
+            <div class="original-image">
+                <h3>原始图像</h3>
+                <div class="zoom-controls">
+                    <button class="zoom-control" id="zoom1x">1x</button>
+                    <button class="zoom-control" id="zoom2x">2x</button>
+                    <button class="zoom-control" id="zoom4x">4x</button>
+                    <button class="zoom-control" id="zoom8x">8x</button>
+                </div>
+                <div class="image-container" id="imageContainer">
+                    <img id="originalImage" src="" alt="请上传图像">
+                    <div id="selectionBox" class="selection-box" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="cut-results">
+                <h3>切分结果</h3>
+                <div class="zoom-controls">
+                    <button class="zoom-control" id="resultZoom1x">1x</button>
+                    <button class="zoom-control" id="resultZoom2x">2x</button>
+                    <button class="zoom-control" id="resultZoom4x">4x</button>
+                    <button class="zoom-control" id="resultZoom8x">8x</button>
+                </div>
+                <div class="frames" id="framesContainer"></div>
+            </div>
+        </div>
+        
+        <div class="tool-section export-section">
+            <h2>导出</h2>
+            <div class="export-options">
+            <button id="exportFrames">导出所有帧</button>
+            <button id="downloadAllFrames" class="download-all-button">下载所有帧</button>
+            <button id="downloadZip" class="download-zip-button">打包下载(ZIP)</button>
+            <button id="generateCode">生成Python代码</button>
+            </div>
+            <div class="export-code" id="exportCode"></div>
+        </div>
+    </div>
+    
+    <!-- 引入JavaScript文件 -->
+    <script src="js/file-handler.js"></script>
+    <script src="js/frame-processor.js"></script>
+    <script src="js/ui-controller.js"></script>
+    <script src="js/export-manager.js"></script>
+    <script src="js/selection-handler.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- 选区编辑器弹窗 -->
+    <div id="selectionModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 class="modal-title">手动框选编辑器</h3>
+                <button class="modal-close" id="closeSelectionModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="selection-editor">
+                    <div class="editor-zoom-controls">
+                        <label for="editorZoomSlider">缩放:</label>
+                        <input type="range" id="editorZoomSlider" class="editor-zoom-slider" min="100" max="800" step="50" value="100">
+                        <span id="editorZoomValue" class="editor-zoom-value">100%</span>
+                        <button id="resetZoomBtn" class="secondary-button">重置</button>
+                    </div>
+                    
+                    <div class="selection-workspace">
+                        <div class="canvas-container-wrapper">
+                            <div class="canvas-scroll-container" id="canvasScrollContainer">
+                                <div class="selection-canvas-container" id="canvasContainer">
+                                    <canvas id="selectionCanvas" class="selection-canvas"></canvas>
+                                </div>
+                            </div>
+                            <div class="selection-info" id="selectionInfo"></div>
+                        </div>
+                        <div class="selection-controls">
+                            <div class="selection-actions">
+                                <button id="addSelectionBtn" class="secondary-button">添加选区</button>
+                                <button id="clearSelectionsBtn" class="secondary-button">清除所有</button>
+                            </div>
+                            
+                            <div class="selection-form-group">
+                                <label for="selectionX">X 坐标</label>
+                                <input type="number" id="selectionX" min="0" value="0">
+                            </div>
+                            <div class="selection-form-group">
+                                <label for="selectionY">Y 坐标</label>
+                                <input type="number" id="selectionY" min="0" value="0">
+                            </div>
+                            <div class="selection-form-group">
+                                <label for="selectionWidth">宽度</label>
+                                <input type="number" id="selectionWidth" min="1" value="32">
+                            </div>
+                            <div class="selection-form-group">
+                                <label for="selectionHeight">高度</label>
+                                <input type="number" id="selectionHeight" min="1" value="32">
+                            </div>
+                            <button id="updateSelectionBtn" class="primary-button">更新选区</button>
+                            
+                            <div class="selection-list" id="selectionList">
+                                <!-- 选区列表将在这里动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelSelectionBtn" class="secondary-button">取消</button>
+                <button id="applySelectionsBtn" class="primary-button">应用选区</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加ZIP文件名弹窗 -->
+    <div id="zipNameModal" class="modal-overlay">
+        <div class="modal-container" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">设置ZIP文件名</h3>
+                <button class="modal-close" id="closeZipNameModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="zipFilename">ZIP文件名</label>
+                    <input type="text" id="zipFilename" placeholder="输入文件名" value="frames">
+                    <span class="input-suffix">.zip</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelZipDownload" class="secondary-button">取消</button>
+                <button id="confirmZipDownload" class="primary-button">下载</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 在文件底部添加新的脚本引用 -->
+    <script src="js/selection-editor.js"></script>
+</body>
+</html>
